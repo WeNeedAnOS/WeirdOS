@@ -2,3 +2,5 @@
 It's a weird open-source operating system. You can take the source code and make corrections. WeirdOS project licensed under GPLv3. WeirdOS Based on Linux.
 # WeirdOS Update is coming August!
 We plan to bring an update to WeirdOS in August.
+# WeirdOS Early Access update has been released!
+Check the Releases section to download it.
