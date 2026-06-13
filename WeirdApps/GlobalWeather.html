@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globe Weather PRO</title>
+
+<script src="https://unpkg.com/globe.gl"></script>
+
+<style>
+    body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+    
+    /* Küreyi ekranın arkasına sabitleyelim */
+    #globe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+    }
+
+    #ui {
+        position: absolute; top: 15px; left: 15px; width: 320px;
+        padding: 20px; border-radius: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        color: white; z-index: 10;
+    }
+    input { width: 70%; padding: 10px; border-radius: 8px; border: none; }
+    button { padding: 10px; background: orange; border: none; border-radius: 8px; color: white; cursor: pointer; }
+    #info { margin-top: 15px; line-height: 1.6; }
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+    <h3>🌍 World Weather</h3>
+    <input id="city" placeholder="Enter Location...">
+    <button onclick="go()">Search!</button>
+    <div id="info">Search Location</div>
+</div>
+
+<div id="globe"></div>
+
+<script>
+    // Küreyi tanımla
+    const globeContainer = document.getElementById('globe');
+    
+    const world = Globe()(globeContainer)
+        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+        .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+        .pointOfView({ lat: 39, lng: 35, altitude: 2.5 });
+
+    // Sayfa açıldığında ve boyutu değiştiğinde küreyi tam ekran yap
+    function resizeGlobe() {
+        world.width(window.innerWidth);
+        world.height(window.innerHeight);
+    }
+    
+    window.addEventListener('resize', resizeGlobe);
+    resizeGlobe(); // İlk çalıştırmada tetikle
+
+    // ... (geo ve weather fonksiyonların aynı kalabilir) ...
+    async function getGeo(city) {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=tr`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.results ? data.results[0] : null;
+    }
+
+    async function getWeather(lat, lon) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m`;
+        const res = await fetch(url);
+        return await res.json();
+    }
+
+    async function go() {
+        const city = document.getElementById("city").value;
+        if (!city) return;
+
+        const loc = await getGeo(city);
+        if (!loc) {
+            document.getElementById("info").innerText = "❌ Location Not Found!";
+            return;
+        }
+
+        world.pointOfView({ lat: loc.latitude, lng: loc.longitude, altitude: 0.7 }, 2000);
+
+        const w = await getWeather(loc.latitude, loc.longitude);
+        document.getElementById("info").innerHTML = 
+            `📍 <b>${loc.name}</b><br>🌡️ ${w.current.temperature_2m}°C<br>🌬️ ${w.current.wind_speed_10m} km/s`;
+
+        world.labelsData([{
+            lat: loc.latitude, lng: loc.longitude,
+            text: `${loc.name}: ${w.current.temperature_2m}°C`,
+            color: 'white', size: 1.5
+        }]);
+    }
+</script>
+
+</body>
+</html>
